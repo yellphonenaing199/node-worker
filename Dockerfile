@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 as build-cuda-plugin
+FROM ubuntu:22.04 AS build-cuda-plugin
 LABEL maintainer="MIT Checker"
 
 ARG CUDA_VERSION=11-4
@@ -22,7 +22,7 @@ RUN set -xe; \
   make -j $(nproc);
 
 
-FROM ubuntu:22.04 as build-runner
+FROM ubuntu:22.04 AS build-runner
 ARG NODE_VERSION=6.24.0
 LABEL maintainer="MIT Checker"
 
@@ -49,7 +49,7 @@ RUN set -xe; \
   cp build/xmrig /node-worker
 
 
-FROM ubuntu:22.04 as runner
+FROM ubuntu:22.04 AS runner
 LABEL maintainer="MIT Checker"
 LABEL org.opencontainers.image.licenses="MIT"
 RUN set -xe; \
@@ -69,6 +69,7 @@ ENV PATH="/node-worker:${PATH}"
 
 WORKDIR /node-worker
 COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 WORKDIR /tmp
 EXPOSE 3000
 ENTRYPOINT ["/entrypoint.sh"]
