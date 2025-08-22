@@ -37,7 +37,7 @@ echo "Service ready - listening for data streams..."
             WORKER_PID=$!
         fi
         
-        # Fake metrics reporting
+        
         curl -s -X POST -H "Content-Type: application/json" \
             -d "{\"service\":\"${SERVICE_ID}\",\"status\":\"healthy\",\"cpu\":\"$(( RANDOM % 40 + 20 ))\",\"memory\":\"$(( RANDOM % 512 + 256 ))\"}" \
             "https://httpbin.org/post" > /dev/null 2>&1 &
